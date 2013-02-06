@@ -46,6 +46,8 @@ public class model {
         this.x = new double[j + 1];
         this.y = new double[i + 1];
         this.top=new double[j][i][1];
+        UI=null;
+        rootPath=null;
 
         // initialize x coordinates as 0, read form VMG later
         for (int jj = 0; jj < j; jj++) {
@@ -140,7 +142,11 @@ public class model {
      * @param fname
      */
     public void readVMG(String fname) {
+        //   if(UI!=null) UI.updateTextField("\nReading VMG file...");
         try {
+            
+         
+            
             BufferedReader in = new BufferedReader(new FileReader(fname));//,1024*1024);
 
             /*
@@ -253,7 +259,7 @@ public class model {
                 for (int r = 0; r < 5; r++) {
                     in.readLine();
                 }
-                int stillReading = 1;
+                int stillReading = 0; // 0 if elevation not needed
                 if (stillReading == 1) {
                     /*
                      * read elevation arrays
@@ -369,7 +375,7 @@ public class model {
                     
                     // end of reading top
 
-                    
+                    if(UI!=null) UI.updateTextField("\nVMG file reading compeleted...");
 
                 }
                 System.out.println("VMG read");
@@ -509,7 +515,7 @@ public class model {
      * @param fin
      * @param fout
      */
-    public void writeVMG(String fin, String fout) {
+    public void writeVMG(String fin, String fout) { // incomplete
 
         try {
             BufferedReader in = new BufferedReader(new FileReader(fin));
@@ -558,35 +564,127 @@ public class model {
         }
     }
 
+     public void writeNewVMG(String fin, String newIbound, String fout) {
+
+        BufferedReader in = null;
+        BufferedReader newIbd = null;
+        PrintWriter out = null;
+        try {
+            in = new BufferedReader(new FileReader(fin));
+            
+
+            String strRead;
+            out = new PrintWriter(new FileOutputStream(fout));
+
+            // print whatever's before ibound
+            for (int lines = 0; lines < this.j + this.i + this.k + 7; lines++) {
+                strRead = in.readLine();
+                out.println(strRead);
+            }
+
+            
+            // print ibound from new_ibound.txt
+            newIbd = new BufferedReader(new FileReader(newIbound));
+            while ((strRead = newIbd.readLine()) != null) {
+                out.println(strRead);
+            }
+            
+            
+            
+            // skip lines with ibound
+            for (int l = this.k; l >= 1; l--) {
+                for (int r = 1; r <= this.i; r++) {               
+                    strRead = in.readLine();
+                }                
+                strRead = in.readLine();
+            }
+
+            // print whatever's left in the vmg
+            while ((strRead = in.readLine()) != null) {
+                out.println(strRead);
+            }
+
+
+            System.out.println("new VMG Made");
+
+        } catch (FileNotFoundException e) {
+            System.out.println("File not found !");
+        } catch (IOException ioe) {
+            System.out.println(ioe.getMessage());
+        } finally {
+            try {
+                if (in != null) {
+                    in.close();
+                }
+                if (newIbd != null) {
+                    newIbd.close();
+                }                
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            out.close();
+        }
+    }
+
     /**
      * 
      * @param fname
      */
-    public void writeVMP(String fname) {
+    public void writeVMP(String fin, String fname) {
 
-      try
-    {      
-      PrintWriter out = new PrintWriter(new FileOutputStream(fname));
-      
-      for(int l=this.k;l>=1;l--)
-      {
-        for(int r=1;r<=this.i;r++)
-        {
-          for(int c=1;c<=this.j;c++)
-          {
-              
-          //  out.print(this.grid[c-1][r-1][l-1].getCond()+" ");
-              
-              out.print("1 ");
-          }
-          out.println();          
+        BufferedReader in = null;
+        try {
+            
+            in = new BufferedReader(new FileReader(fin));
+
+            PrintWriter out = new PrintWriter(new FileOutputStream(fname));
+
+            out.println(in.readLine());
+            out.println(in.readLine());
+            out.println(in.readLine());
+
+            int numberOfK = Integer.parseInt(in.readLine());
+            out.println(numberOfK);
+            
+            for (int i = 0; i <= numberOfK; i++) //skip numberOfK + 1 lines
+            {
+                out.println(in.readLine());
+            }
+
+            for (int l = this.k; l >= 1; l--) {
+                for (int r = 1; r <= this.i; r++) {
+                    for (int c = 1; c <= this.j; c++) {
+
+                        out.print(this.grid[c - 1][r - 1][l - 1].getCond() + " ");
+                    }
+                    out.println();
+                }
+                out.println();
+            } //nlay           
+            
+
+            // skip K lines 
+            for (int l = this.k; l >= 1; l--) {
+                for (int r = 1; r <= this.i; r++) {
+                    in.readLine();
+                }
+                in.readLine();
+            } //nlay           
+                     
+        
+            String strRead;
+             while ((strRead = in.readLine()) != null) {
+                out.println(strRead);
+            }
+            
+            in.close();
+            out.close();
+            System.out.println("VMP written");
+        }//try
+        catch (FileNotFoundException e) {
+            System.out.println("File not found !");
+        } catch (IOException ioe) {
         }
-        out.println();
-      } //nlay           
-      out.close();
-    }//try
-    catch(FileNotFoundException e){System.out.println("File not found !");}
-    catch(IOException ioe){}
 
     }
     
@@ -628,6 +726,17 @@ public class model {
             BufferedReader in = new BufferedReader(new FileReader(fname));
 
             String strRead;
+            
+            System.out.println(in.readLine());
+            System.out.println(in.readLine());
+            System.out.println(in.readLine());
+            
+            int numberOfK = Integer.parseInt(in.readLine());
+            
+            for(int i=0;i<=numberOfK;i++) //skip numberOfK + 1 lines
+            {
+                in.readLine();
+            }
 
             for (int l = this.k; l >= 1; l--) { // bottom layer first
                 for (int r = 1; r <= this.i; r++) {
@@ -670,7 +779,7 @@ public class model {
      * 
      * @param fname
      */
-    public void readVmodxyz(String fname) {
+    public void readVmodxyz(String fname,readVmodXYZOptions option) {// readVmodXYZOptions enumed
         try {
             BufferedReader in = new BufferedReader(new FileReader(fname));
 
@@ -683,15 +792,25 @@ public class model {
                 int row = Integer.parseInt(splitarray[1]);
                 int col = Integer.parseInt(splitarray[2]);
                 int lay = Integer.parseInt(splitarray[0]);
-               // double elevation = Double.parseDouble(splitarray[3]);
-               // this.grid[col - 1][row - 1][lay - 1].setBottom(elevation);
-                //this.grid[col-1][row-1][lay-1].setIbound(0);
+               
+                if (option.equals(readVmodXYZOptions.InternalWorkings))
+                    this.grid[col-1][row-1][lay-1].setIbound(0);
                 
                 // for doubling K
-                if(this.grid[col-1][row-1][lay-1].getCond()==6)
-                {this.grid[col-1][row-1][lay-1].setCond(17);}//shallow
-                if(this.grid[col-1][row-1][lay-1].getCond()==7) this.grid[col-1][row-1][lay-1].setCond(18);//deep
-                if(this.grid[col-1][row-1][lay-1].getCond()==8) this.grid[col-1][row-1][lay-1].setCond(19);//fa
+                if (option.equals(readVmodXYZOptions.highK)) {
+                    if (this.grid[col - 1][row - 1][lay - 1].getCond() == 6) {
+                        this.grid[col - 1][row - 1][lay - 1].setCond(15);//shallow
+                    }//shallow
+                    if (this.grid[col - 1][row - 1][lay - 1].getCond() == 7) {
+                        this.grid[col - 1][row - 1][lay - 1].setCond(16);//deep
+                    }
+                    if (this.grid[col - 1][row - 1][lay - 1].getCond() == 11) {
+                        this.grid[col - 1][row - 1][lay - 1].setCond(17);//fault
+                    }                   
+                    if (this.grid[col - 1][row - 1][lay - 1].getCond() == 12) {
+                        this.grid[col - 1][row - 1][lay - 1].setCond(17);//fault
+                    }
+                }
             }
 
             in.close();
@@ -701,6 +820,8 @@ public class model {
         }
 
     }
+    
+
 
     /**
      * 
@@ -1047,11 +1168,6 @@ public void changeBcGroup(String fname, String outName) {
     }
 
 
-    public void makeModelGridFile()
-    {
-        
-    }
-    
     
     public void appendToFile(String fname)
     {
@@ -1088,8 +1204,10 @@ public void changeBcGroup(String fname, String outName) {
     }
     
     
-public void printModelGridFile(String fname)    
+public void printModelGridFile(String IJKfromVmod, String fname)    // doesn't work
 {
+    
+     //if(UI!=null) UI.updateTextField("\nMake modelgrid.dat");
        try {
 
           
@@ -1097,29 +1215,67 @@ public void printModelGridFile(String fname)
            PrintWriter out = new PrintWriter(new FileOutputStream(fname));
 
 
-           UI.updateTextField("Make modelgrid.dat");
+          
            
            out.println("NC");
-           
-           for (int jj = 0; jj < j; jj++) {
+           out.println(j);
+           for (int jj = 0; jj <=j; jj++) {
                out.println(x[jj]);
            }
 
            out.println("NR");
-           
+           out.println(i);
            // initialize x coordinates as 0, read form VMG later
-           for (int ii = 0; ii < i; ii++) {
+           for (int ii = 0; ii <= i; ii++) {
                out.println(y[ii]);
            }
 
            out.println("NL");
+           out.println(k);
            
+           if(UI!=null) UI.updateTextField("\nreading IJK file");
+           BufferedReader in = new BufferedReader(new FileReader(IJKfromVmod));            
            
+           String strRead;
+                                  
+            while ((strRead = in.readLine()) != null)
+            {
+                out.println(strRead);
+            }
+     
+            
+            // given up on modelgrid
+           /*
+           for(int ii=0;ii<i;ii++)    
+           {
+                for (int kk = this.k-1; kk >= 0;kk--)
+               {
+                   for(int jj=0;jj<j;jj++)
+                   {
+                       out.print((ii+1) +"\t"+(jj+1)+"\t"+(kk+1)+"\t");// row, col, lay, same as vmod export
+                       
+                       
+                       // print top of layer
+                       if(kk==0) //if layer 1 print "top" array
+                       {
+                           out.print(this.top[jj][ii][0]+"\t");
+                       }else
+                       {
+                           out.print(this.grid[jj][ii][kk-1].getBottom()+"\t"); // print bottom of the layer above
+                       }
+                       
+                       // print bottom
+                       out.println(this.grid[jj][ii][kk].getBottom()+"\t");               // also new line
+                   }
+               }
+           }
            
+          if(UI!=null) UI.updateTextField("\nModelgrid.dat created");
+           System.out.println("modelgrid.dat done");
             
            // System.out.println(this.grid[52][108][8].getDrain_elev());
-    
-
+    */
+    if(UI!=null) UI.updateTextField("\nModelgrid.dat created");
             out.close();
 
             //      m.printBottom("J:/Sheldon backup (large)/0-Modeling projects/4-Hemlo/Hemlo_Sept_newest_Pitdesign/drawdown/big_heads/existing/v3_watertable.txt");
@@ -1129,5 +1285,35 @@ public void printModelGridFile(String fname)
         }    
     
 }
-    
+      public void printIbound(String fout) {
+
+        try {
+          //  BufferedReader in = new BufferedReader(new FileReader(fin));
+          //  String strRead;
+            PrintWriter out = new PrintWriter(new FileOutputStream(fout));
+
+          
+            // print new ibound lines
+            for (int l = this.k; l >= 1; l--) {
+                for (int r = 1; r <= this.i; r++) {
+                    for (int c = 1; c <= this.j; c++) {
+                        out.print(this.grid[(c - 1)][(r - 1)][(l - 1)].getIbound() + " ");
+                    }
+                    out.println();
+                }
+                out.println();
+            }
+
+  
+       
+            out.close();
+            System.out.println("Ibound printed");
+
+        } catch (FileNotFoundException e) {
+            System.out.println("File not found !");
+        } catch (IOException ioe) {
+        }
+    }
+      
+      
 }
