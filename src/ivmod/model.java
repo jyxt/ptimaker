@@ -2,23 +2,20 @@ package ivmod;
 
 import java.io.*;
 import java.util.regex.Pattern;
+
 /**
  *
  * @author sheldon.chi
- * 
- * 
- * Array coordinates system used: 
- *    j   i  k 
- * = col row lay
- * =  c   r  l 
- * =  x   y  z 
- * 
- * 
- * j,i,k growing direction is same as MODFLOW 
- * but array index starts from 0 instead of 1
- * 
- * 
- * 
+ *
+ *
+ * Array coordinates system used: j i k = col row lay = c r l = x y z
+ *
+ *
+ * j,i,k growing direction is same as MODFLOW but array index starts from 0
+ * instead of 1
+ *
+ *
+ *
  */
 public class model {
 
@@ -28,11 +25,11 @@ public class model {
     double[] y;// grid lines y, size = i+1
     String rootPath;
     PitGUI UI;
-    double[][][]top;
+    double[][][] top;
 
     //constructor
     /**
-     * 
+     *
      * @param j
      * @param i
      * @param k
@@ -45,9 +42,9 @@ public class model {
         this.grid = new cell[j][i][k];
         this.x = new double[j + 1];
         this.y = new double[i + 1];
-        this.top=new double[j][i][1];
-        UI=null;
-        rootPath=null;
+        this.top = new double[j][i][1];
+        UI = null;
+        rootPath = null;
 
         // initialize x coordinates as 0, read form VMG later
         for (int jj = 0; jj < j; jj++) {
@@ -58,17 +55,15 @@ public class model {
         for (int ii = 0; ii < i; ii++) {
             y[ii] = 0;
         }
-        
-        
+
+
         //initialize top
-        for (int jj=0;jj<j;jj++)
-        {
-            for(int ii=0;ii<i;ii++)
-            {
-                top[jj][ii][0]=0;
+        for (int jj = 0; jj < j; jj++) {
+            for (int ii = 0; ii < i; ii++) {
+                top[jj][ii][0] = 0;
             }
         }
-        
+
 
         // put right coordinates into grid, j,i,k
         for (int c = 0; c < j; c++) {
@@ -79,7 +74,7 @@ public class model {
             }//c
         }// r
     }//model
-    
+
     public model(int j, int i, int k, String rootPathIn, PitGUI UIIn) { //col,row,lay
 
         this.j = j;
@@ -89,8 +84,8 @@ public class model {
         this.x = new double[j + 1];
         this.y = new double[i + 1];
         this.rootPath = rootPathIn;
-         this.top=new double[j][i][1];
-        
+        this.top = new double[j][i][1];
+
         // initialize x coordinates as 0, read form VMG later
         for (int jj = 0; jj < j; jj++) {
             x[jj] = 0;
@@ -101,18 +96,16 @@ public class model {
             y[ii] = 0;
         }
 
-        
-           //initialize top
-        for (int jj=0;jj<j;jj++)
-        {
-            for(int ii=0;ii<i;ii++)
-            {
-                top[jj][ii][0]=0;
+
+        //initialize top
+        for (int jj = 0; jj < j; jj++) {
+            for (int ii = 0; ii < i; ii++) {
+                top[jj][ii][0] = 0;
             }
         }
-        
 
-        
+
+
         // put right coordinates into grid, j,i,k
         for (int c = 0; c < j; c++) {
             for (int r = 0; r < i; r++) {
@@ -121,49 +114,44 @@ public class model {
                 }
             }//c
         }// r
-        
-        
-        
-        
-        UI=UIIn;
-        
-        
+
+
+
+
+        UI = UIIn;
+
+
         System.out.println(rootPath);
-        
+
     }//model    
 
     /*
-     * read x,y grid coordinates, ibound and bottom of each cell from VMG
-     * refer to vmod help "input data formats" section for format
-     * 
+     * read x,y grid coordinates, ibound and bottom of each cell from VMG refer
+     * to vmod help "input data formats" section for format
+     *
      */
     /**
-     * 
+     *
      * @param fname
      */
     public void readVMG(String fname) {
         //   if(UI!=null) UI.updateTextField("\nReading VMG file...");
         try {
-            
-         
-            
+
+
+
             BufferedReader in = new BufferedReader(new FileReader(fname));//,1024*1024);
 
             /*
-             * read x, y, skip z 
-             * 
-             * format:
-             * j                Line 1
-             * x coordinates... j+1 l   ines in total
-             * i                
-             * y coordinates... i+1 lines in total
-             * k
-             * z's              k+1 lines in total
-             * BLANK LINE
+             * read x, y, skip z
+             *
+             * format: j Line 1 x coordinates... j+1 l ines in total i y
+             * coordinates... i+1 lines in total k z's k+1 lines in total BLANK
+             * LINE
              */
 
             String strRead;
-            
+
             // x
             in.readLine();//skip line j
             for (int c = 0; c <= this.j; c++) { // column: length=col+1
@@ -172,12 +160,12 @@ public class model {
             }
             //y
             in.readLine();//skip line i
-            for (int r = 0; r <= this.i; r++) { // row: length=row+1
+            for (int r = this.i;r>=0; r--) { // row: length=row+1   ROW IS REVERSED
                 strRead = in.readLine();
                 this.y[r] = Double.parseDouble(strRead);
             }
             //skip z's
-            for (int r = 0; r <= this.k + 2; r++) { // 0 to k+2 because k+1 layers + NL + blankline
+            for (int l = 0; l <= this.k + 2; l++) { // 0 to k+2 because k+1 layers + NL + blankline
                 in.readLine();
             }
 
@@ -188,13 +176,14 @@ public class model {
 
 
 
-                /* read ibound
-                 * 
-                 * ibounds are stored by row in normal MODFLOW order
-                 * but bottom layer first
-                 * 
+                /*
+                 * read ibound
+                 *
+                 * ibounds are stored by row in normal MODFLOW order but bottom
+                 * layer first
+                 *
                  * layer are seperated by BLANK LINE
-                 * 
+                 *
                  */
 
                 for (int l = this.k; l >= 1; l--) { // bottom layer first
@@ -211,50 +200,33 @@ public class model {
 
                 /*
                  * read elevation
-                 * 
+                 *
                  * format:
-                 * 
-                 * elevations are stored by column in reverse coordinates
-                 * 10 elements per line, bottom layer first
-                 * 
+                 *
+                 * elevations are stored by column in reverse coordinates 10
+                 * elements per line, bottom layer first
+                 *
                  * e.g. 11 rows, 2 col
-                 *            
-                 * 
-                 * 11 22
-                 * 10 21
-                 * 9  20
-                 * 8  19
-                 * 7  18
-                 * 6  17
-                 * 5  16
-                 * 4  15 
-                 * 3  14
-                 * 2  13
-                 * 1  12
-                 * 
+                 *
+                 *
+                 * 11 22 10 21 9 20 8 19 7 18 6 17 5 16 4 15 3 14 2 13 1 12
+                 *
                  * in vmg:
-                 * 
-                 * 1 2 3 4 5 6 7 8 9 10
-                 * 11
-                 * 12 13 14 15 16 17 18 19 20 21
-                 * 22
-                 * 
-                 * numbers are delimited by one or more spaces
-                 * used regex to capture the space(s)
-                 * 
-                 * 
+                 *
+                 * 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22
+                 *
+                 * numbers are delimited by one or more spaces used regex to
+                 * capture the space(s)
+                 *
+                 *
                  */
 
 
                 /*
                  * skip five lines:
-                 * 
-                 * BLANK LINE
-                 * j
-                 * i
-                 * k
-                 * BLANK LINE
-                 * 
+                 *
+                 * BLANK LINE j i k BLANK LINE
+                 *
                  */
                 for (int r = 0; r < 5; r++) {
                     in.readLine();
@@ -263,7 +235,7 @@ public class model {
                 if (stillReading == 1) {
                     /*
                      * read elevation arrays
-                     * 
+                     *
                      * model has to be larger than 10x10
                      */
 
@@ -295,7 +267,7 @@ public class model {
                                     int row = ind * 10 + iten; //find row coordinates
                                     //                    System.out.println(splitarray[iten + 1]);
 
-                                    
+
                                     this.grid[elev2codeJ(col)][elev2codeI(row)][elev2codeK(lay)].setBottom(Double.parseDouble(splitarray[iten]));
                                     //                    System.out.println(col + " " + row + " " + lay + "= " + splitarray[iten + 1]);
                                 }
@@ -308,74 +280,76 @@ public class model {
                             if (this.j > 10) {
                                 strRead = in.readLine();
                                 String[] splitarray = pattern.split(strRead.trim()); // delimited by one or more space(s)
-                   //            System.out.println(splitarray.length);
+                                //            System.out.println(splitarray.length);
                                 for (int iLeft = 0; iLeft < rowLeft; iLeft++) {
                                     int row = rowLines * 10 + iLeft;
-                                    
-                              
 
-                                        
-                            //                System.out.println(Double.parseDouble(splitarray[iLeft]));
-                                           this.grid[elev2codeJ(col)][elev2codeI(row)][elev2codeK(lay)].setBottom(Double.parseDouble(splitarray[iLeft]));
-                                    
-        //                            
-                                    
+
+
+
+                                    //                System.out.println(Double.parseDouble(splitarray[iLeft]));
+                                    this.grid[elev2codeJ(col)][elev2codeI(row)][elev2codeK(lay)].setBottom(Double.parseDouble(splitarray[iLeft]));
+
+                                    //                            
+
                                 }
                             }
                         }
 
 
                     }
-                    
-                    
+
+
                     // read top array
-                    
-                    
+
+
                     for (int col = 0; col < this.j; col++) {
 
-                            /*
-                             * read lines with 10 elements each
-                             */
+                        /*
+                         * read lines with 10 elements each
+                         */
 
-                            // per line
-                            for (int ind = 0; ind < rowLines; ind++) {
+                        // per line
+                        for (int ind = 0; ind < rowLines; ind++) {
+                            strRead = in.readLine();
+                            if (strRead.isEmpty()) {
                                 strRead = in.readLine();
-                                if (strRead.isEmpty()) {
-                                    strRead = in.readLine();
-                                }
-                                String[] splitarray = pattern.split(strRead.trim());
-                                //             System.out.println("Elements per line is: " + splitarray.length);
-                                // ten elements per line        
-                                for (int iten = 0; iten < 10; iten++) {
-                                    int row = ind * 10 + iten; //find row coordinates
-                                    //                    System.out.println(splitarray[iten + 1]);
-
-                                 //   System.out.println(elev2codeJ(col)+"\t"+elev2codeI(row));
-                                    this.top[elev2codeJ(col)][elev2codeI(row)][0] = Double.parseDouble(splitarray[iten]);
-                                    //                    System.out.println(col + " " + row + " " + lay + "= " + splitarray[iten + 1]);
-                                }
                             }
+                            String[] splitarray = pattern.split(strRead.trim());
+                            //             System.out.println("Elements per line is: " + splitarray.length);
+                            // ten elements per line        
+                            for (int iten = 0; iten < 10; iten++) {
+                                int row = ind * 10 + iten; //find row coordinates
+                                //                    System.out.println(splitarray[iten + 1]);
 
-
-                            /*
-                             * read the single line with < 10 elements
-                             */
-                            if (this.j > 10) {
-                                strRead = in.readLine();
-                                String[] splitarray = pattern.split(strRead.trim()); // delimited by one or more space(s)
-                                for (int iLeft = 0; iLeft < rowLeft; iLeft++) {
-                                    int row = rowLines * 10 + iLeft;
-
-                                     this.top[elev2codeJ(col)][elev2codeI(row)][0] = Double.parseDouble(splitarray[iLeft]);
-                    
-                                    
-                                }
+                                //   System.out.println(elev2codeJ(col)+"\t"+elev2codeI(row));
+                                this.top[elev2codeJ(col)][elev2codeI(row)][0] = Double.parseDouble(splitarray[iten]);
+                                //                    System.out.println(col + " " + row + " " + lay + "= " + splitarray[iten + 1]);
                             }
                         }
-                    
+
+
+                        /*
+                         * read the single line with < 10 elements
+                         */
+                        if (this.j > 10) {
+                            strRead = in.readLine();
+                            String[] splitarray = pattern.split(strRead.trim()); // delimited by one or more space(s)
+                            for (int iLeft = 0; iLeft < rowLeft; iLeft++) {
+                                int row = rowLines * 10 + iLeft;
+
+                                this.top[elev2codeJ(col)][elev2codeI(row)][0] = Double.parseDouble(splitarray[iLeft]);
+
+
+                            }
+                        }
+                    }
+
                     // end of reading top
 
-                    if(UI!=null) UI.updateTextField("\nVMG file reading compeleted...");
+                    if (UI != null) {
+                        UI.updateTextField("\nVMG file reading compeleted...");
+                    }
 
                 }
                 System.out.println("VMG read");
@@ -389,7 +363,7 @@ public class model {
 
     // convert between world and model coordinates
     /**
-     * 
+     *
      */
     public void world2Model() {
     }
@@ -399,7 +373,7 @@ public class model {
     // uses regex to detect csv, space, or tab delimited
     // consider for improvement: more optimized algorithm for finding pit cells
     /**
-     * 
+     *
      * @param fname
      */
     public void makePit(String fname) {
@@ -415,7 +389,9 @@ public class model {
             int pitz = -1;
             while ((strRead = in.readLine()) != null) {
                 //   strRead = in.readLine(); // don't need this, already reading in while()!
-                if(strRead.contains("E")) continue;
+                if (strRead.contains("E")) {
+                    continue;
+                }
                 String[] splitarray = pattern.split(strRead);
                 double xp = Double.parseDouble(splitarray[0]);
                 double yp = Double.parseDouble(splitarray[1]);
@@ -443,7 +419,7 @@ public class model {
 
                 try {
                     if ((pitx == -1) || (pity == -1)) {
-                        //    System.out.println("Pit cell outside model domain");
+                        //    System.out.println("Pit creadbmoell outside model domain");
                         throw new Exception("Pit node outside model domain!");
                     }
                 } catch (Exception e) {
@@ -452,7 +428,7 @@ public class model {
 
                 for (int l = this.k - 2; l >= 0; l--) {
                     if (this.grid[pitx][pity][l].getBottom() > zp) {
-              //        if(zp>this.grid[pitx][pity][l].getBottom()&&zp<this.grid[pitx][pity][l].getBottom()+10){
+                        //        if(zp>this.grid[pitx][pity][l].getBottom()&&zp<this.grid[pitx][pity][l].getBottom()+10){
                         pitz = l + 1;
                         //  pitz=l;
                         //                   System.out.println("layer: " + l + " " + this.grid[pitx][pity][l].getBottom());
@@ -511,7 +487,7 @@ public class model {
     }
 
     /**
-     * 
+     *
      * @param fin
      * @param fout
      */
@@ -540,19 +516,11 @@ public class model {
             }
 
             /*
-            // skip original ibound lines
-            for(int lines = 0;lines<(nrow+1)*nlay;lines++)
-            {
-            strRead = in.readLine();        
-            }     
-            
-            out.println();
-            // print whatever's left in the vmg
-            while ((strRead=in.readLine())!=null){
-            strRead = in.readLine(); 
-            out.println(strRead);
-            }      
-            
+             * // skip original ibound lines for(int lines =
+             * 0;lines<(nrow+1)*nlay;lines++) { strRead = in.readLine(); }              *
+             * out.println(); // print whatever's left in the vmg while
+             * ((strRead=in.readLine())!=null){ strRead = in.readLine();
+             * out.println(strRead); }              *
              */
             in.close();
             out.close();
@@ -564,14 +532,14 @@ public class model {
         }
     }
 
-     public void writeNewVMG(String fin, String newIbound, String fout) {
+    public void writeNewVMG(String fin, String newIbound, String fout) {
 
         BufferedReader in = null;
         BufferedReader newIbd = null;
         PrintWriter out = null;
         try {
             in = new BufferedReader(new FileReader(fin));
-            
+
 
             String strRead;
             out = new PrintWriter(new FileOutputStream(fout));
@@ -582,20 +550,20 @@ public class model {
                 out.println(strRead);
             }
 
-            
+
             // print ibound from new_ibound.txt
             newIbd = new BufferedReader(new FileReader(newIbound));
             while ((strRead = newIbd.readLine()) != null) {
                 out.println(strRead);
             }
-            
-            
-            
+
+
+
             // skip lines with ibound
             for (int l = this.k; l >= 1; l--) {
-                for (int r = 1; r <= this.i; r++) {               
+                for (int r = 1; r <= this.i; r++) {
                     strRead = in.readLine();
-                }                
+                }
                 strRead = in.readLine();
             }
 
@@ -618,7 +586,7 @@ public class model {
                 }
                 if (newIbd != null) {
                     newIbd.close();
-                }                
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -627,14 +595,14 @@ public class model {
     }
 
     /**
-     * 
+     *
      * @param fname
      */
-    public void writeVMP(String fin, String fname) {
+    public void writeBlockData(String fin, String fname,BlockDataOptions option) {
 
         BufferedReader in = null;
         try {
-            
+
             in = new BufferedReader(new FileReader(fin));
 
             PrintWriter out = new PrintWriter(new FileOutputStream(fname));
@@ -645,7 +613,7 @@ public class model {
 
             int numberOfK = Integer.parseInt(in.readLine());
             out.println(numberOfK);
-            
+
             for (int i = 0; i <= numberOfK; i++) //skip numberOfK + 1 lines
             {
                 out.println(in.readLine());
@@ -655,13 +623,19 @@ public class model {
                 for (int r = 1; r <= this.i; r++) {
                     for (int c = 1; c <= this.j; c++) {
 
-                        out.print(this.grid[c - 1][r - 1][l - 1].getCond() + " ");
+                        if(option.equals(BlockDataOptions.VMP_K))
+                        {
+                            out.print(this.grid[c - 1][r - 1][l - 1].getCond() + " ");
+                        }else if(option.equals(BlockDataOptions.VMZ))
+                        {
+                            out.print(this.grid[c - 1][r - 1][l - 1].getZonebudget() + " ");
+                        }
                     }
                     out.println();
                 }
                 out.println();
             } //nlay           
-            
+
 
             // skip K lines 
             for (int l = this.k; l >= 1; l--) {
@@ -670,16 +644,16 @@ public class model {
                 }
                 in.readLine();
             } //nlay           
-                     
-        
+
+
             String strRead;
-             while ((strRead = in.readLine()) != null) {
+            while ((strRead = in.readLine()) != null) {
                 out.println(strRead);
             }
-            
+
             in.close();
             out.close();
-            System.out.println("VMP written");
+            
         }//try
         catch (FileNotFoundException e) {
             System.out.println("File not found !");
@@ -687,11 +661,10 @@ public class model {
         }
 
     }
-    
-    
+
     // convert elevation array coordinates to PitKit coordinates
     /**
-     * 
+     *
      * @param elev_i
      * @return
      */
@@ -700,7 +673,7 @@ public class model {
     }
 
     /**
-     * 
+     *
      * @param elev_j
      * @return
      */
@@ -709,7 +682,7 @@ public class model {
     }
 
     /**
-     * 
+     *
      * @param elev_k
      * @return
      */
@@ -718,22 +691,22 @@ public class model {
     }
 
     /**
-     * 
+     *
      * @param fname
      */
-    public void readVMP(String fname) {
+    public void readBlockData(String fname,BlockDataOptions option) {
         try {
             BufferedReader in = new BufferedReader(new FileReader(fname));
 
             String strRead;
-            
-            System.out.println(in.readLine());
-            System.out.println(in.readLine());
-            System.out.println(in.readLine());
-            
+
+            in.readLine();
+            in.readLine();
+            in.readLine();
+
             int numberOfK = Integer.parseInt(in.readLine());
-            
-            for(int i=0;i<=numberOfK;i++) //skip numberOfK + 1 lines
+
+            for (int i = 0; i <= numberOfK; i++) //skip numberOfK + 1 lines
             {
                 in.readLine();
             }
@@ -743,7 +716,13 @@ public class model {
                     strRead = in.readLine();
                     String[] splitarray = strRead.split(" ");
                     for (int c = 1; c <= this.j; c++) {
-                        this.grid[(c - 1)][(r - 1)][(l - 1)].setCond(Integer.parseInt(splitarray[(c - 1)]));
+                        if (option.equals(BlockDataOptions.VMP_K))
+                        {
+                            this.grid[(c - 1)][(r - 1)][(l - 1)].setCond(Integer.parseInt(splitarray[(c - 1)]));
+                        }else if (option.equals(BlockDataOptions.VMZ))
+                        {
+                            this.grid[(c - 1)][(r - 1)][(l - 1)].setZonebudget(Integer.parseInt(splitarray[(c - 1)]));
+                        }
                     }
                 }
                 strRead = in.readLine(); // BLANK LINE
@@ -759,7 +738,7 @@ public class model {
 
     // for greyfox
     /**
-     * 
+     *
      */
     public void getBedrockElevation() {
         for (int c = 0; c < j; c++) {
@@ -776,26 +755,27 @@ public class model {
 
     /// this method doesn't work
     /**
-     * 
+     *
      * @param fname
      */
-    public void readVmodxyz(String fname,readVmodXYZOptions option) {// readVmodXYZOptions enumed
+    public void readVmodxyz(String fname, readVmodXYZOptions option) {// readVmodXYZOptions enumed
         try {
             BufferedReader in = new BufferedReader(new FileReader(fname));
 
-            String strRead;            
+            String strRead;
             Pattern pattern = Pattern.compile("[\t ]+");
 
             while ((strRead = in.readLine()) != null) {
-               
+
                 String[] splitarray = pattern.split(strRead.trim()); // trimmed
-                int row = Integer.parseInt(splitarray[1]);
-                int col = Integer.parseInt(splitarray[2]);
-                int lay = Integer.parseInt(splitarray[0]);
-               
-                if (option.equals(readVmodXYZOptions.InternalWorkings))
-                    this.grid[col-1][row-1][lay-1].setIbound(0);
-                
+                int row = Integer.parseInt(splitarray[0]);
+                int col = Integer.parseInt(splitarray[1]);
+                int lay = Integer.parseInt(splitarray[2]);
+
+                if (option.equals(readVmodXYZOptions.InternalWorkings)) {
+                    this.grid[col - 1][row - 1][lay - 1].setIbound(0);
+                }
+
                 // for doubling K
                 if (option.equals(readVmodXYZOptions.highK)) {
                     if (this.grid[col - 1][row - 1][lay - 1].getCond() == 6) {
@@ -806,25 +786,28 @@ public class model {
                     }
                     if (this.grid[col - 1][row - 1][lay - 1].getCond() == 11) {
                         this.grid[col - 1][row - 1][lay - 1].setCond(17);//fault
-                    }                   
+                    }
                     if (this.grid[col - 1][row - 1][lay - 1].getCond() == 12) {
                         this.grid[col - 1][row - 1][lay - 1].setCond(17);//fault
                     }
+                }
+                
+                if (option.equals(readVmodXYZOptions.flux)) {
+                    if(!splitarray[3].contains("E30"))
+                        this.grid[col - 1][row - 1][lay - 1].setDrain_elev(Double.parseDouble(splitarray[3])); // put flux in drain_elevation for now
                 }
             }
 
             in.close();
         } catch (FileNotFoundException e) {
-            System.out.println("File not found !");
+            System.out.println("File not found - readVMODXYZ!");
         } catch (IOException ioe) {
         }
 
     }
-    
-
 
     /**
-     * 
+     *
      * @param fname
      */
     public void printBottom(String fname) {
@@ -839,11 +822,11 @@ public class model {
                         //            System.out.println("k:" + l + "    " + this.grid[c][r][l].getBottom());
 
                         //print water table 
-                    //    out.println(((this.x[c]+this.x[c+1])/2+575640+1060) + "\t" + ((this.y[i-r]+this.y[i-(r+1)])/2+5391875+25) + "\t" + this.grid[c][r][l].getBottom());
-                        
+                        //    out.println(((this.x[c]+this.x[c+1])/2+575640+1060) + "\t" + ((this.y[i-r]+this.y[i-(r+1)])/2+5391875+25) + "\t" + this.grid[c][r][l].getBottom());
+
                         // print L-till head RR
-                        out.println(((this.x[c]+this.x[c+1])/2) + "\t" + ((this.y[i-r]+this.y[i-(r+1)])/2) + "\t" + (this.grid[c][r][l].getBottom()-this.grid[c][r][l].getPit_elev()));
-                        
+                        out.println(((this.x[c] + this.x[c + 1]) / 2) + "\t" + ((this.y[i - r] + this.y[i - (r + 1)]) / 2) + "\t" + (this.grid[c][r][l].getBottom() - this.grid[c][r][l].getPit_elev()));
+
                     }
 
                 }
@@ -859,9 +842,9 @@ public class model {
     }
 
     public JI findJI(double xp, double yp) {
-        
-        JI ji = new JI(0,0);
-        
+
+        JI ji = new JI(0, 0);
+
         for (int c = 1; c <= this.j; c++) { //consider adding exceptions
             //              System.out.println("xc: "+x[c]);
             if (this.x[c] > xp) {
@@ -877,14 +860,14 @@ public class model {
                 //                 System.out.println("r: "+r);
             }
         }
-        
+
         return ji;
 
     }
 
     public void findJI_inFile() {
         try {
-            
+
             this.readVMG("C:/0-Modeling projects/9-RainyRiver/vmod/2012-dummie/DUMMIE.VMG");
             BufferedReader in = new BufferedReader(new FileReader("C:/0-Modeling projects/9-RainyRiver/shit.txt"));
 
@@ -898,25 +881,25 @@ public class model {
                 double n = Double.parseDouble(splitarray[2]);
                 //int lay = Integer.parseInt(splitarray[2]);
                 //  double elevation = Double.parseDouble(splitarray[3]);
-                JI ji = new JI(0,0);
+                JI ji = new JI(0, 0);
                 ji = this.findJI(e, n);
-                
+
                 double ground = this.grid[ji.J][ji.I][0].getBottom();
                 double layer2_thickness = this.grid[ji.J][ji.I][0].getBottom() - this.grid[ji.J][ji.I][1].getBottom();
                 double layer3_thickness = this.grid[ji.J][ji.I][1].getBottom() - this.grid[ji.J][ji.I][2].getBottom();
                 double layer4_thickness = this.grid[ji.J][ji.I][2].getBottom() - this.grid[ji.J][ji.I][3].getBottom();
-                
-           //     System.out.println(ID);
-           //     System.out.println( layer2_thickness);
-        //        System.out.println(layer3_thickness);
+
+                //     System.out.println(ID);
+                //     System.out.println( layer2_thickness);
+                //        System.out.println(layer3_thickness);
                 System.out.println(layer4_thickness);
-                
-                
+
+
             }
 
             in.close();
-      
-      //      m.printBottom("J:/Sheldon backup (large)/0-Modeling projects/4-Hemlo/Hemlo_Sept_newest_Pitdesign/drawdown/big_heads/existing/v3_watertable.txt");
+
+            //      m.printBottom("J:/Sheldon backup (large)/0-Modeling projects/4-Hemlo/Hemlo_Sept_newest_Pitdesign/drawdown/big_heads/existing/v3_watertable.txt");
 
         } catch (FileNotFoundException e) {
             System.out.println("File not found !");
@@ -936,24 +919,23 @@ public class model {
     }
 
     public void readVMB(String fname) {
-        
-        
+
+
         // so far only for steady state with drain cells
-        
-        
+
+
         try {
 
             BufferedReader in = new BufferedReader(new FileReader(fname));
             String strRead;
-          
-            
-            
+
+
+
             // skip 4 lines 
-            for (int skip = 0;skip<=3;skip++)
-            {
+            for (int skip = 0; skip <= 3; skip++) {
                 in.readLine();
             }
-     
+
 
             while ((strRead = in.readLine()) != null) {
 
@@ -979,19 +961,18 @@ public class model {
                     double drainCond = Double.parseDouble(splitarray[3]);
                     int active = Integer.parseInt(splitarray[4]);
 
-        
+
 
                     this.grid[dCol][dRow][dLay].setDrain_elev(drainElev);
                     this.grid[dCol][dRow][dLay].setDrain_cond(drainCond);
 
-                }else
-                {
+                } else {
                     in.readLine();
                 }
             }
-            
+
             System.out.println(this.grid[52][108][8].getDrain_elev());
-    
+
 
             in.close();
 
@@ -1002,27 +983,25 @@ public class model {
         } catch (IOException ioe) {
         }
     }
-    
-    public void printVMB(String fname)
-    {
 
-        
+    public void printVMB(String fname) {
+
+
         // currently only supports drain
         try {
             PrintWriter out = new PrintWriter(new FileOutputStream(fname));
-            
+
             out.println(this.k);
             out.println(this.j);
             out.println(this.i);
             out.println();
-            
+
 
             for (int c = 0; c < this.j; c++) {
                 for (int r = 0; r < this.i; r++) {
                     for (int l = 0; l < this.k; l++) {
-                        
-                        if(this.grid[c][r][l].getBc()==3)
-                        {
+
+                        if (this.grid[c][r][l].getBc() == 3) {
                             out.println(l);
                             out.println(c);
                             out.println(r);
@@ -1039,13 +1018,13 @@ public class model {
                             out.print(this.grid[c][r][l].getDrain_cond());
                             System.out.println(this.grid[c][r][l].getDrain_cond());
                             out.print(" ");
-                            out.println(1+"   0.0000000e+00");
-                            
-                            
-                                    
+                            out.println(1 + "   0.0000000e+00");
+
+
+
                         }
-                        
-                         if(this.grid[c][r][l].getBc()==2) //river
+
+                        if (this.grid[c][r][l].getBc() == 2) //river
                         {
                             out.println(l);
                             out.println(c);
@@ -1060,17 +1039,17 @@ public class model {
                             out.print("   ");
                             out.print(this.grid[c][r][l].getDrain_elev());
                             out.print("   ");
-                            out.print(this.grid[c][r][l].getBottom()+.1);
+                            out.print(this.grid[c][r][l].getBottom() + .1);
                             out.print("   ");                            // river bottoms
                             out.print(this.grid[c][r][l].getDrain_cond());
-                   //         System.out.println(this.grid[c][r][l].getDrain_cond());
+                            //         System.out.println(this.grid[c][r][l].getDrain_cond());
                             out.print(" ");
-                            out.println(1+"   0.0000000e+00");
-                            
-                            
-                                    
+                            out.println(1 + "   0.0000000e+00");
+
+
+
                         }
-                        
+
                     }
 
                 }
@@ -1082,32 +1061,32 @@ public class model {
         } catch (FileNotFoundException e) {
             System.out.println("File not found !");
         } catch (IOException ioe) {
-        }        
+        }
     }
-public void changeBcGroup(String fname, String outName) {
-        
-        
+
+    public void changeBcGroup(String fname, String outName) {
+
+
         // so far only for steady state with drain cells
-        
-        
+
+
         try {
 
-            BufferedReader in = new BufferedReader(new FileReader(fname));            
-          
-            PrintWriter out = new PrintWriter(new FileOutputStream(outName));
-            
+            BufferedReader in = new BufferedReader(new FileReader(fname));
 
-                        
+            PrintWriter out = new PrintWriter(new FileOutputStream(outName));
+
+
+
             String strRead;
-          
-            
-            
+
+
+
             // skip 4 lines 
-            for (int skip = 0;skip<=3;skip++)
-            {
+            for (int skip = 0; skip <= 3; skip++) {
                 out.println(in.readLine());
             }
-     
+
 
             while ((strRead = in.readLine()) != null) {
 
@@ -1117,44 +1096,41 @@ public void changeBcGroup(String fname, String outName) {
                 out.println(dCol);
                 int dRow = Integer.parseInt(in.readLine().trim());
                 out.println(dRow);
-                
+
                 in.readLine();
                 out.println("1");
                 int group = Integer.parseInt(in.readLine().trim());
                 out.println(group);
                 int numOfEntries = Integer.parseInt(in.readLine().trim());
                 out.println(numOfEntries);
-            //    this.grid[dCol][dRow][dLay].setBc(bcType);
-            //    this.grid[dCol][dRow][dLay].setBcGroup(group);
+                //    this.grid[dCol][dRow][dLay].setBc(bcType);
+                //    this.grid[dCol][dRow][dLay].setBcGroup(group);
 
                 out.println(in.readLine());
                 /*
-                if (bcType == 3) {
-                    Pattern pattern = Pattern.compile("[\t ]+");
-
-                    String[] splitarray = pattern.split(in.readLine().trim());
-
-                    double startTime = Double.parseDouble(splitarray[0]);
-                    double stopTime = Double.parseDouble(splitarray[1]);
-                    double drainElev = Double.parseDouble(splitarray[2]);
-                    double drainCond = Double.parseDouble(splitarray[3]);
-                    int active = Integer.parseInt(splitarray[4]);
-
-        
-
-                    this.grid[dCol][dRow][dLay].setDrain_elev(drainElev);
-                    this.grid[dCol][dRow][dLay].setDrain_cond(drainCond);
-
-                }else
-                {
-                    in.readLine();
-                }
-                * 
-                */
+                 * if (bcType == 3) { Pattern pattern = Pattern.compile("[\t
+                 * ]+");
+                 *
+                 * String[] splitarray = pattern.split(in.readLine().trim());
+                 *
+                 * double startTime = Double.parseDouble(splitarray[0]); double
+                 * stopTime = Double.parseDouble(splitarray[1]); double
+                 * drainElev = Double.parseDouble(splitarray[2]); double
+                 * drainCond = Double.parseDouble(splitarray[3]); int active =
+                 * Integer.parseInt(splitarray[4]);
+                 *
+                 *
+                 *
+                 * this.grid[dCol][dRow][dLay].setDrain_elev(drainElev);
+                 * this.grid[dCol][dRow][dLay].setDrain_cond(drainCond);
+                 *
+                 * }else { in.readLine(); }
+                 *
+                 */
             }
-            
-           // System.out.println(this.grid[52][108][8].getDrain_elev());
-    
+
+            // System.out.println(this.grid[52][108][8].getDrain_elev());
+
 
             in.close();
             out.close();
@@ -1167,132 +1143,122 @@ public void changeBcGroup(String fname, String outName) {
         }
     }
 
+    public void appendToFile(String fname) {
+        try {
+            String data = " This content will append to the end of the file";
 
-    
-    public void appendToFile(String fname)
-    {
-        try{
-    		String data = " This content will append to the end of the file";
- 
-    		File file =new File(fname);
- 
-    		//if file doesnt exists, then create it
- //   		if(!file.exists()){
-   // 			file.createNewFile();
-    //		}
- 
-    		//true = append file
-    		FileWriter fileWritter = new FileWriter(file.getName(),true);
-    	        BufferedWriter bufferWritter = new BufferedWriter(fileWritter);
-                
-                
-                
-                
-    	        bufferWritter.write(data);
-                
-                
-                
-                
-                
-    	        bufferWritter.close();
- 
-	        System.out.println("Done");
- 
-    	}catch(IOException e){
-    		e.printStackTrace();
-    	}
+            File file = new File(fname);
+
+            //if file doesnt exists, then create it
+            //   		if(!file.exists()){
+            // 			file.createNewFile();
+            //		}
+
+            //true = append file
+            FileWriter fileWritter = new FileWriter(file.getName(), true);
+            BufferedWriter bufferWritter = new BufferedWriter(fileWritter);
+
+
+
+
+            bufferWritter.write(data);
+
+
+
+
+
+            bufferWritter.close();
+
+            System.out.println("Done");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
-    
-    
-public void printModelGridFile(String IJKfromVmod, String fname)    // doesn't work
-{
-    
-     //if(UI!=null) UI.updateTextField("\nMake modelgrid.dat");
-       try {
 
-          
-  
-           PrintWriter out = new PrintWriter(new FileOutputStream(fname));
+    public void printModelGridFile(String IJKfromVmod, String fname) // doesn't work
+    {
+
+        //if(UI!=null) UI.updateTextField("\nMake modelgrid.dat");
+        try {
 
 
-          
-           
-           out.println("NC");
-           out.println(j);
-           for (int jj = 0; jj <=j; jj++) {
-               out.println(x[jj]);
-           }
 
-           out.println("NR");
-           out.println(i);
-           // initialize x coordinates as 0, read form VMG later
-           for (int ii = 0; ii <= i; ii++) {
-               out.println(y[ii]);
-           }
+            PrintWriter out = new PrintWriter(new FileOutputStream(fname));
 
-           out.println("NL");
-           out.println(k);
-           
-           if(UI!=null) UI.updateTextField("\nreading IJK file");
-           BufferedReader in = new BufferedReader(new FileReader(IJKfromVmod));            
-           
-           String strRead;
-                                  
-            while ((strRead = in.readLine()) != null)
-            {
+
+
+
+            out.println("NC");
+            out.println(j);
+            for (int jj = 0; jj <= j; jj++) {
+                out.println(x[jj]);
+            }
+
+            out.println("NR");
+            out.println(i);
+            // initialize x coordinates as 0, read form VMG later
+            for (int ii = 0; ii <= i; ii++) {
+                out.println(y[ii]);
+            }
+
+            out.println("NL");
+            out.println(k);
+
+            if (UI != null) {
+                UI.updateTextField("\nreading IJK file");
+            }
+            BufferedReader in = new BufferedReader(new FileReader(IJKfromVmod));
+
+            String strRead;
+
+            while ((strRead = in.readLine()) != null) {
                 out.println(strRead);
             }
-     
-            
+
+
             // given up on modelgrid
            /*
-           for(int ii=0;ii<i;ii++)    
-           {
-                for (int kk = this.k-1; kk >= 0;kk--)
-               {
-                   for(int jj=0;jj<j;jj++)
-                   {
-                       out.print((ii+1) +"\t"+(jj+1)+"\t"+(kk+1)+"\t");// row, col, lay, same as vmod export
-                       
-                       
-                       // print top of layer
-                       if(kk==0) //if layer 1 print "top" array
-                       {
-                           out.print(this.top[jj][ii][0]+"\t");
-                       }else
-                       {
-                           out.print(this.grid[jj][ii][kk-1].getBottom()+"\t"); // print bottom of the layer above
-                       }
-                       
-                       // print bottom
-                       out.println(this.grid[jj][ii][kk].getBottom()+"\t");               // also new line
-                   }
-               }
-           }
-           
-          if(UI!=null) UI.updateTextField("\nModelgrid.dat created");
-           System.out.println("modelgrid.dat done");
-            
-           // System.out.println(this.grid[52][108][8].getDrain_elev());
-    */
-    if(UI!=null) UI.updateTextField("\nModelgrid.dat created");
+             * for(int ii=0;ii<i;ii++) { for (int kk = this.k-1; kk >= 0;kk--) {
+             * for(int jj=0;jj<j;jj++) { out.print((ii+1)
+             * +"\t"+(jj+1)+"\t"+(kk+1)+"\t");// row, col, lay, same as vmod
+             * export
+             *
+             *
+             * // print top of layer if(kk==0) //if layer 1 print "top" array {
+             * out.print(this.top[jj][ii][0]+"\t"); }else {
+             * out.print(this.grid[jj][ii][kk-1].getBottom()+"\t"); // print
+             * bottom of the layer above }
+             *
+             * // print bottom
+             * out.println(this.grid[jj][ii][kk].getBottom()+"\t"); // also new
+             * line } } }
+             *
+             * if(UI!=null) UI.updateTextField("\nModelgrid.dat created");
+             * System.out.println("modelgrid.dat done");
+             *
+             * // System.out.println(this.grid[52][108][8].getDrain_elev());
+             */
+            if (UI != null) {
+                UI.updateTextField("\nModelgrid.dat created");
+            }
             out.close();
 
             //      m.printBottom("J:/Sheldon backup (large)/0-Modeling projects/4-Hemlo/Hemlo_Sept_newest_Pitdesign/drawdown/big_heads/existing/v3_watertable.txt");
 
+        } catch (IOException ioe) {
         }
-         catch (IOException ioe) {
-        }    
-    
-}
-      public void printIbound(String fout) {
+
+    }
+
+    public void printIbound(String fout) {
 
         try {
-          //  BufferedReader in = new BufferedReader(new FileReader(fin));
-          //  String strRead;
+            //  BufferedReader in = new BufferedReader(new FileReader(fin));
+            //  String strRead;
             PrintWriter out = new PrintWriter(new FileOutputStream(fout));
 
-          
+
             // print new ibound lines
             for (int l = this.k; l >= 1; l--) {
                 for (int r = 1; r <= this.i; r++) {
@@ -1304,8 +1270,8 @@ public void printModelGridFile(String IJKfromVmod, String fname)    // doesn't w
                 out.println();
             }
 
-  
-       
+
+
             out.close();
             System.out.println("Ibound printed");
 
@@ -1314,6 +1280,157 @@ public void printModelGridFile(String IJKfromVmod, String fname)    // doesn't w
         } catch (IOException ioe) {
         }
     }
-      
-      
+
+    
+    public void readVMP(String fname) {
+        this.readBlockData(fname, BlockDataOptions.VMP_K);
+      //  System.out.println("good, K portion of VMP is read");
+    }
+
+    public void readVMZ(String fname) {
+        this.readBlockData(fname, BlockDataOptions.VMZ);
+      //  System.out.println("viola, VMZ is read");
+    }
+
+    public void writeVMP(String fin, String fout) {
+        this.writeBlockData(fin, fout, BlockDataOptions.VMP_K);
+    //    System.out.println("all right, vmp is written to file");
+        
+    }
+
+    public void writeVMZ(String fin, String fout) // vmz exact same format as vmp except only has :K" portion
+    {
+        this.writeBlockData(fin, fout, BlockDataOptions.VMZ);
+      //  System.out.println("OK, vmz is written to file");
+    }
+
+    
+    
+
+    public void readDrainAndPrintVMZ(String drainFile, String vmzIn, String vmzOut) {// this include reading vmz
+        BufferedReader in = null;
+        PrintWriter out = null;
+        try {
+            int row, col, lay, code;
+
+            in = new BufferedReader(new FileReader(drainFile));
+            out = new PrintWriter(new FileOutputStream(vmzOut));
+
+ 
+            String strRead;
+            Pattern pattern = Pattern.compile("[\t ]+");
+            
+            in.readLine(); //skip header line
+
+            while ((strRead = in.readLine()) != null) {
+
+                String[] splitarray = pattern.split(strRead.trim()); // trimmed
+                row = Integer.parseInt(splitarray[0]);
+                col = Integer.parseInt(splitarray[1]);
+                lay = Integer.parseInt(splitarray[2]);
+                code = Integer.parseInt(splitarray[3]);
+                this.grid[col - 1][row - 1][lay - 1].setCond(code);
+            }
+
+         //   this.readVMZ(vmzIn);
+/*
+            for (int c = 0; c < j; c++) {
+                for (int r = 0; r < i; r++) {
+                    for (int l = 0; l < k; l++) {
+                        this.grid[c][r][l].setZonebudget(this.grid[c][r][l].getCond());
+                    }
+                }//c
+            }// r
+  */          
+            
+            
+            for (int l = this.k; l >= 1; l--) {
+                for (int r = 1; r <= this.i; r++) {
+                    for (int c = 1; c <= this.j; c++) {
+
+                        out.print(this.grid[c - 1][r - 1][l - 1].getCond() + " ");
+                    }
+                    out.println();
+                }
+                out.println();
+            }
+          //  this.writeVMZ(vmzIn, vmzOut);
+            
+
+        } catch (FileNotFoundException e) {
+            System.out.println("File not found !");
+        } catch (IOException ioe) {
+        } finally {
+            try {
+                if (in != null) {
+                    in.close();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            out.close();
+        }
+
+    }
+
+    public void printVMAbasedonK(String VMA) {//RR assign particles on TMA & WRP
+        PrintWriter out = null;
+        try {
+            out = new PrintWriter(new FileOutputStream(VMA));
+            for (int c = 0; c < j; c++) {
+                for (int r = 0; r < i; r++) {
+                    for (int l = 0; l < k; l++) {
+                        if (((this.grid[c][r][l].getCond() == 16)&& (this.grid[c][r][l].getIbound()==1) &&(r%4==0))) {
+                            out.println("0");
+                            out.println("1");
+                            out.println("1");
+                            
+                            out.println((this.x[c]/2+this.x[c+1]/2) +" "+(this.y[r+1]/2+this.y[r]/2)+" "+(this.grid[c][r][1].getBottom()-.1)+" "+"0.000000"); // 10 cm below layer 1                            
+                        }
+                        
+                        if ((this.grid[c][r][l].getCond() == 18)&&(this.grid[c][r][l].getIbound()==1)&&(c%4==0)&&(r%2==0)){
+                            out.println("0");
+                            out.println("1");
+                            out.println("1");
+                            out.println((this.x[c]/2+this.x[c+1]/2) +" "+(this.y[r+1]/2+this.y[r]/2)+" "+(this.grid[c][r][l].getBottom()-.1)+" "+"0.000000"); // 10 cm below layer 1
+                            
+                        }
+                    }
+                }//c
+            }// r    
+
+        } catch (FileNotFoundException e) {
+            System.out.println("File not found !");
+        } catch (IOException ioe) {
+            System.out.println("IOexception");
+        } finally {
+            out.close();
+        }
+    }
+
+    public void getFluxBasedonK(String flux) {
+        PrintWriter out = null;
+        try {
+            out = new PrintWriter(new FileOutputStream(flux));
+            for (int c = 0; c < j; c++) {
+                for (int r = 0; r < i; r++) {
+                    for (int l = 0; l < k; l++) {
+                        if(this.grid[c][r][l].getDrain_elev()!=0.0 && (this.grid[c][r][0].getCond() == 16) && (this.grid[c][r][0].getIbound()==1))
+                        {
+                            double Q = this.grid[c][r][l].getDrain_elev()*(this.x[c+1]-this.x[c])*(this.y[r]-this.y[r+1]);
+                            out.println((this.x[c]/2+this.x[c+1]/2) +" "+(this.y[r+1]/2+this.y[r]/2)+" "+Q);
+                        }
+                    }
+                }//c
+            }// r    
+
+        } catch (FileNotFoundException e) {
+            System.out.println("File not found - Q print !");
+        } catch (IOException ioe) {
+            System.out.println("IOexception");
+        } finally {
+            out.close();
+        }
+
+    }
 }
